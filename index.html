@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Game App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a id="nav-home" class="active">Home</a>
+      <a id="nav-profile">Profile</a>
+      <a id="nav-lobby">Lobby</a>
+      <a id="nav-game">Game</a>
+      <pear-ctrl></pear-ctrl>
+    </nav>
+  </header>
+  <div class="container">
+    <!--Home-->
+    <section id="section-main" class="section active">
+      <div  id="main-content">
+        <h2>Multiplayer Game using Pear</h2>
+        <p>Welcome to the multiplayer game using Pear! This app allows you to play a game with your team members. wihtout the need for a server.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Join a team and play a game with your team members</li>
+          <li>Keep track of your team's performance</li>
+          <li>Manage your team's game history</li>
+        </ul>
+      </div>
+    </section>
+    <!-- Profile Section -->
+    <section id="section-profile" class="section">
+      <div class="profile-content">
+        <h2>User Profile</h2>
+      <div id="profile-info">
+        <p>Username: <span id="username-display">Not set</span></p>
+        <p>Games Played: <span id="games-played">0</span></p>
+        <p>Wins: <span id="wins">0</span></p>
+        <p>Losses: <span id="losses">0</span></p>
+      </div>
+      <div id="profile-form">
+        <input type="text" id="username-input" placeholder="Enter username" />
+        <button id="save-username">Save Username</button>
+      </div>
+      </div>
+    </section>
+
+    <!-- Lobby Section: Generate & Join Game -->
+    <section id="section-lobby" class="section">
+      <div  class="lobby-content">
+        <h2>Lobby</h2>
+        <div>
+          <button id="generate-game-link">Generate Game Link</button>
+          <p>Game Link: <span id="game-link-display">None</span></p>
+        </div>
+        <div>
+          <input type="text" id="join-game-link" placeholder="Enter game link" />
+          <button id="join-game">Join Game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Section (Protected) -->
+    <section id="section-game" class="section">
+      <div class="game-content">
+        <h2>Game</h2>
+        <div id="game-status">Waiting for opponent...</div>
+        <div class="choices">
+          <button onclick="sendChoice('rock')">
+            <img src="assets/rock.png" alt="Rock" style="width:80px;height:80px;" />
+            <span>Rock</span>
+          </button>
+          <button onclick="sendChoice('paper')">
+            <img src="assets/paper.png" alt="Paper" style="width:80px;height:80px;" />
+            <span>Paper</span>
+          </button>
+          <button onclick="sendChoice('scissors')">
+            <img src="assets/scissor.png" alt="Scissors" style="width:80px;height:80px;" />
+            <span>Scissors</span>
+          </button>
+        </div>
+        <div id="scoreboard">
+          <p>Your Score: <span id="player-score">0</span></p>
+          <p>Opponent Score: <span id="opponent-score">0</span></p>
+          <button onclick="resetGame()">Reset Game</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
