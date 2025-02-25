@@ -1,5 +1,5 @@
 
-# MultiPlayer RPS Game - Team Game App
+# MultiPlayer RPS Game - peargame
 
 Team Game App is a single-page desktop application that enables real-time multiplayer rock–paper–scissors (RPS) gameplay. Built using Pear technologies, it leverages peer-to-peer networking to allow players to generate or join game sessions securely, manage their profiles, and track game statistics.
 
@@ -49,8 +49,8 @@ Team Game App is a single-page desktop application that enables real-time multip
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
-   cd multipler-game-rps
+   git clone https://github.com/adeshsinghbits/peargame.git
+   cd peargame
    ```
 
 2. **Install dependencies:**
