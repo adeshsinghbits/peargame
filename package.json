@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "b4a": "^1.6.7",
-    "corestore": "^6.18.4",
+    "hyperbee": "^2.22.2",
+    "hypercore": "^10.38.2",
     "hypercore-crypto": "^3.4.2",
     "hyperswarm": "^4.8.4"
   }

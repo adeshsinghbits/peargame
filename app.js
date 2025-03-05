@@ -1,21 +1,19 @@
 import Hyperswarm from 'hyperswarm';
 import b4a from 'b4a';
 import crypto from 'hypercore-crypto';
-import Corestore from 'corestore';
+import Hypercore from 'hypercore';
+import Hyperbee from 'hyperbee';
 
-//profile
-const store = new Corestore('./my-storage');
-const profileFeed = store.get({ name: 'user-profile' });
+// Profile Setup
+const feed = new Hypercore('./my-storage');
+const db = new Hyperbee(feed, { keyEncoding: 'utf-8', valueEncoding: 'json' });
 let userProfile = { username: '', gamesPlayed: 0, wins: 0, losses: 0 };
 
 async function loadUserProfile() {
-  await profileFeed.ready();
-  const entries = [];
-  for await (const data of profileFeed.createReadStream()) {
-    entries.push(JSON.parse(data.toString()));
-  }
-  if (entries.length > 0) {
-    userProfile = entries[entries.length - 1];
+  await db.ready();
+  const storedProfile = await db.get('user-profile');
+  if (storedProfile && storedProfile.value) {
+    userProfile = storedProfile.value;
   }
   updateProfileUI();
 }
@@ -24,25 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadUserProfile();
 });
 
-document.getElementById('save-username').addEventListener('click', async () => {
-  const usernameInput = document.getElementById('username-input').value.trim();
-  
-  if (usernameInput) {
-    userProfile.username = usernameInput;
-    updateProfileUI();
-    await profileFeed.append(JSON.stringify(userProfile));
-  }
-});
-
-
-function updateProfileUI() {
-  document.getElementById('username-display').textContent = userProfile.username || 'Not set';
-  document.getElementById('games-played').textContent = userProfile.gamesPlayed;
-  document.getElementById('wins').textContent = userProfile.wins;
-  document.getElementById('losses').textContent = userProfile.losses;
-}
-
-//navigation
+// Navigation Handling
 const navProfile = document.getElementById('nav-profile');
 const navLobby = document.getElementById('nav-lobby');
 const navGame = document.getElementById('nav-game');
@@ -74,58 +54,71 @@ navGame.addEventListener('click', (e) => {
   showSection(sectionGame);
 });
 
-//lobby
+// P2P Game Logic
 let gameAccess = false;
-let generatedTopic = null;
-let swarm;
+let generatedTopic = crypto.randomBytes(32);
+let swarm = new Hyperswarm();
 let peerConnection = null;
 
+function setupPeerCommunication(socket) {
+  peerConnection = socket;
+  socket.on('data', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      if (message.type === "choice") {
+        opponentChoice = message.choice;
+        checkGameResult();
+      }
+      if (message.type === "turn") {
+        isPlayerTurn = true;
+        updateGameUI();
+      }
+    } catch (err) {
+      console.error("Error parsing peer message:", err);
+    }
+  });
+  socket.on('close', () => {
+    console.log("Peer disconnected.");
+    peerConnection = null;
+    gameAccess = false;
+    document.getElementById('game-status').textContent = "Disconnected from game.";
+  });
+}
+
 document.getElementById('generate-game-link').addEventListener('click', () => {
-  generatedTopic = crypto.randomBytes(32);
   const gameLink = b4a.toString(generatedTopic, 'hex');
   document.getElementById('game-link-display').textContent = gameLink;
-  swarm = new Hyperswarm();
-  swarm.join(generatedTopic, { server: true, client: true });
-  swarm.on('connection', (socket) => {
-    console.log("Connected to a peer!");
-    peerConnection = socket;
-    document.getElementById('game-status').textContent = "Connected! Waiting for turn...";
-  });
+  document.getElementById('join-game-link').value = gameLink;
 });
 
-document.getElementById('join-game').addEventListener('click', () => {
+document.getElementById('join-game').addEventListener('click', async () => {
   const joinLink = document.getElementById('join-game-link').value.trim();
-  if (joinLink && generatedTopic && joinLink === b4a.toString(generatedTopic, 'hex')) {
-    gameAccess = true;
-    if (!swarm) {
-      swarm = new Hyperswarm();
-      const joinTopic = b4a.from(joinLink, 'hex');
-      swarm.join(joinTopic, { client: true });
-    }
-    alert("Joined game successfully. You can now access the Game section.");
-  } else {
-    alert("Invalid game link. Please check and try again.");
+  if (!joinLink) {
+    alert("Please enter a valid game link.");
+    return;
   }
+  gameAccess = true;
+  const joinTopic = b4a.from(joinLink, 'hex');
+  swarm.join(joinTopic, { client: true });
+  swarm.on('connection', (socket, details) => {
+    console.log("Connected to peer:", details);
+    setupPeerCommunication(socket);
+  });
+  alert("Joined game successfully. You can now access the Game section.");
 });
 
-//game
+// Game Play Logic
 let playerChoice = null;
 let opponentChoice = null;
 let playerScore = 0;
 let opponentScore = 0;
 let isPlayerTurn = true;
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadUserProfile();
-  updateGameUI();
-});
-
 window.sendChoice = function(choice) {
   if (peerConnection && isPlayerTurn) {
     playerChoice = choice;
     peerConnection.write(JSON.stringify({ type: "choice", choice }));
     isPlayerTurn = false;
-    updateGameUI();
     document.getElementById('game-status').textContent = "Waiting for opponent's move...";
   } else {
     alert("No peer connection yet or not your turn.");
@@ -152,37 +145,17 @@ async function checkGameResult() {
       userProfile.gamesPlayed++;
       userProfile.losses++;
     }
-
-    // Save updated profile data to Corestore
-    await profileFeed.append(JSON.stringify(userProfile));
-
+    await db.put('user-profile', userProfile);
     document.getElementById('game-status').textContent = `Opponent chose ${opponentChoice}. ${result}`;
     document.getElementById('player-score').textContent = playerScore;
     document.getElementById('opponent-score').textContent = opponentScore;
     updateProfileUI();
-
-    playerChoice = null;
-    opponentChoice = null;
-
-    setTimeout(() => {
-      isPlayerTurn = true;
-      if (peerConnection) peerConnection.write(JSON.stringify({ type: "turn" }));
-      updateGameUI();
-    }, 1000);
   }
 }
 
-
-function updateGameUI() {
-  document.querySelectorAll(".choices button").forEach(button => button.disabled = !isPlayerTurn);
-}
-
-function resetGame() {
-  peerConnection = null;
-  playerChoice = null;
-  opponentChoice = null;
-  playerScore = 0;
-  opponentScore = 0;
-  isPlayerTurn = true;
-  updateGameUI();
+function updateProfileUI() {
+  document.getElementById('username-display').textContent = userProfile.username || 'Not set';
+  document.getElementById('games-played').textContent = userProfile.gamesPlayed;
+  document.getElementById('wins').textContent = userProfile.wins;
+  document.getElementById('losses').textContent = userProfile.losses;
 }
