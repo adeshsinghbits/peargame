@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Game App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a id="nav-home" class="active">Home</a>
+      <a id="nav-profile">Profile</a>
+      <a id="nav-lobby">Lobby</a>
+      <a id="nav-game">Game</a>
+      <pear-ctrl></pear-ctrl>
+    </nav>
+  </header>
+  <div class="container">
+    <!--Home-->
+    <section id="section-main" class="section active">
+      <div  id="main-content">
+        <h2>Welcome in PearGame</h2>
+        <p>Welcome to the multiplayer game using Pear! This app allows you to play a game with your team members. wihtout the need for a server.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Join a team and play a game with your team members</li>
+          <li>Keep track of your team's performance</li>
+          <li>Manage your team's game history</li>
+        </ul>
+      </div>
+    </section>
+    <!-- Profile Section -->
+    <section id="section-profile" class="section">
+      <div class="profile-header">
+        <img id="profile-pic" src="assets/pear-vector.svg" alt="Profile Picture">
+        <p id="username">xyz</p>
+        <button id="edit-profile-btn" class="edit-btn">Edit Profile</button>
+      </div>
+      <div class="profile-container">
+        <aside class="profile-nav">
+          <h4>Profile</h4>
+          <div>
+            <button class="active">Account</button>
+            <button>Friends</button>
+            <button>Progression</button>
+            <button>Character Builder</button>
+          </div>
+        </aside>
+        <div class="profile-content">
+          <h3>Account Details</h3>
+          <div class="account-details">
+            <p>Username:  <span id="display-username">xyz</span></p>
+            <p>Email:  <span id="display-email">zK7VX@example.com</span></p>
+          </div>
+          <h3>Personal Information</h3>
+          <div class="personal-info">
+            <p>Name: <span id="display-name">xyz</span></p>
+            <p>Bio: <span id="display-bio">I am xyz</span></p>
+          </div>
+          <form id="edit-profile-form" >
+            <div class="form-input">
+              <label>Username:</label>
+              <input type="text" id="edit-username">
+            </div>
+            <div class="form-input">
+              <label>Email:</label>
+              <input type="email" id="edit-email">
+            </div>
+            <div class="form-input">
+              <label>Name:</label>
+              <input type="text" id="edit-name">
+            </div>
+            <div class="form-input">
+              <label>Bio:</label>
+              <textarea id="edit-bio"></textarea>
+            </div>
+            <button type="submit">Save</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lobby Section: Generate & Join Game -->
+    <section id="section-lobby" class="section">
+      <div  class="lobby-content">
+        <h2>Make and Join Game</h2>
+        <div>
+          <button id="generate-game-link">Generate Game Link</button>
+          <p>Game Link: <span id="game-link-display">None</span></p>
+        </div>
+        <div>
+          <input type="text" id="join-game-link" placeholder="Enter game link" />
+          <button id="join-game">Join Game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Section (Protected) -->
+    <section id="section-game" class="section">
+      <div class="game-content">
+        <h2>Game</h2>
+        <div id="game-status">Waiting for opponent...</div>
+        <div class="choices">
+          <button onclick="sendChoice('rock')">
+            <img src="assets/rock.png" alt="Rock" style="width:80px;height:80px;" />
+            <span>Rock</span>
+          </button>
+          <button onclick="sendChoice('paper')">
+            <img src="assets/paper.png" alt="Paper" style="width:80px;height:80px;" />
+            <span>Paper</span>
+          </button>
+          <button onclick="sendChoice('scissors')">
+            <img src="assets/scissor.png" alt="Scissors" style="width:80px;height:80px;" />
+            <span>Scissors</span>
+          </button>
+        </div>
+        <div id="scoreboard">
+          <p>Your Score: <span id="player-score">0</span></p>
+          <p>Opponent Score: <span id="opponent-score">0</span></p>
+          <button onclick="resetGame()">Reset Game</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
