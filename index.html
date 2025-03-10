@@ -81,7 +81,7 @@
       </div>
     </section>
 
-    <!-- Lobby Section: Generate & Join Game -->
+    <!-- Lobby Section -->
     <section id="section-lobby" class="section">
       <div  class="lobby-content">
         <h2>Make and Join Game</h2>
@@ -93,7 +93,20 @@
           <input type="text" id="join-game-link" placeholder="Enter game link" />
           <button id="join-game">Join Game</button>
         </div>
+        <div>
+          <button id="start-lobby-chat">Chat</button>
+        </div>
       </div>
+    
+      <div class="chat-box">
+        <h3>Lobby Chat</h3>
+        <div id="chat-messages"></div>
+        <div  class="chat-form">
+          <input type="text" id="chat-input" placeholder="Type a message..." />
+          <button id="send-chat">Send</button>
+        </div>
+      </div>
+
     </section>
 
     <!-- Game Section (Protected) -->

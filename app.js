@@ -7,37 +7,34 @@ import Corestore from 'corestore';
 const store = new Corestore('./storage');
 const profileFeed = store.get({ name: 'profile-data' });
 
+let opponentChoice = null; 
+
 // Load existing profile data
 async function loadProfile() {
   await profileFeed.ready();
   if (profileFeed.length > 0) {
     const latestData = await profileFeed.get(profileFeed.length - 1);
-    const profile = JSON.parse(b4a.toString(latestData)); // Decode properly
+    const profile = JSON.parse(b4a.toString(latestData));
 
     document.querySelector("#display-username").textContent = profile.username;
     document.querySelector("#display-email").textContent = profile.email;
     document.querySelector("#display-name").textContent = profile.name;
     document.querySelector("#username").textContent = profile.username;
     document.querySelector("#display-bio").textContent = profile.bio;
+    
+    localStorage.setItem("username", profile.username);
   }
 }
 loadProfile();
 
-// Profile edit functionality
-const editBtn = document.querySelector("#edit-profile-btn");
-const editForm = document.querySelector("#edit-profile-form");
-
-editBtn.addEventListener("click", () => {
-  if (editForm.style.display === "none" || editForm.style.display === "") {
-    editForm.style.display = "block";
-  } else {
-    editForm.style.display = "none";
-  }
+// Profile Edit Functionality
+document.querySelector("#edit-profile-btn").addEventListener("click", () => {
+  const editForm = document.querySelector("#edit-profile-form");
+  editForm.style.display = editForm.style.display === "none" ? "block" : "none";
 });
 
-editForm.addEventListener("submit", async (e) => {
+document.querySelector("#edit-profile-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-
   const updatedProfile = {
     username: document.querySelector("#edit-username").value,
     email: document.querySelector("#edit-email").value,
@@ -46,56 +43,55 @@ editForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const encodedProfile = b4a.from(JSON.stringify(updatedProfile)); // Encode correctly
-    await profileFeed.append(encodedProfile);
-
+    await profileFeed.append(b4a.from(JSON.stringify(updatedProfile)));
     alert("Profile updated!");
     loadProfile();
-    editForm.style.display = "none";
+    document.querySelector("#edit-profile-form").style.display = "none";
   } catch (err) {
-    console.error("Error saving profile data:", err);
+    console.error("Error saving profile:", err);
   }
 });
 
-// Elements
-const navProfile = document.getElementById('nav-profile');
-const navLobby = document.getElementById('nav-lobby');
-const navGame = document.getElementById('nav-game');
-const navHome = document.getElementById('nav-home');
+// Navigation
+const sections = {
+  home: document.getElementById("section-main"),
+  profile: document.getElementById("section-profile"),
+  lobby: document.getElementById("section-lobby"),
+  game: document.getElementById("section-game"),
+};
 
-const sectionProfile = document.getElementById('section-profile');
-const sectionLobby = document.getElementById('section-lobby');
-const sectionGame = document.getElementById('section-game');
-const sectionHome = document.getElementById('section-main');
+const showSection = (section) => {
+  Object.values(sections).forEach(s => s.classList.remove("active"));
+  section.classList.add("active");
+};
+const navlist = {
+  home: document.getElementById("nav-home"),
+  profile: document.getElementById("nav-profile"),
+  lobby: document.getElementById("nav-lobby"),
+  game: document.getElementById("nav-game"),
+};
 
-const gameStatus = document.getElementById('game-status');
-const playerScoreEl = document.getElementById('player-score');
-const opponentScoreEl = document.getElementById('opponent-score');
+const activeNav = (nav) => {
+  Object.values(navlist).forEach(s => s.classList.remove("active"));
+  nav.classList.add("active");
+};
 
-// Function to show active section
-function showSection(section) {
-  [sectionProfile, sectionLobby, sectionGame, sectionHome].forEach(s => s.classList.remove('active'));
-  [navProfile, navLobby, navGame, navHome].forEach(n => n.classList.remove('active'));
 
-  section.classList.add('active');
 
-  if (section === sectionProfile) navProfile.classList.add('active');
-  else if (section === sectionLobby) navLobby.classList.add('active');
-  else if (section === sectionGame) navGame.classList.add('active');
-  else if (section === sectionHome) navHome.classList.add('active');
-}
-
-// Event Listeners
-navHome.addEventListener('click', () => showSection(sectionHome));
-navProfile.addEventListener('click', () => showSection(sectionProfile));
-navLobby.addEventListener('click', () => showSection(sectionLobby));
-navGame.addEventListener('click', (e) => {
-  if (!gameAccess) {
+document.getElementById("nav-home").addEventListener("click", () => {showSection(sections.home), activeNav(navlist.home);}
+);
+document.getElementById("nav-profile").addEventListener("click", () => {showSection(sections.profile),  activeNav(navlist.profile)}
+);
+document.getElementById("nav-lobby").addEventListener("click", () => {showSection(sections.lobby), activeNav(navlist.lobby);}
+);
+document.getElementById("nav-game").addEventListener("click", (e) => {
+  if (!gameAccess) {222
     alert("Access denied. Please join a game first!");
     e.preventDefault();
-    return;
+  } else {
+    showSection(sections.game);
+    activeNav(navlist.game);
   }
-  showSection(sectionGame);
 });
 
 // P2P Game Logic
@@ -105,44 +101,51 @@ let swarm = new Hyperswarm();
 let peerConnection = null;
 let playerScore = 0;
 let opponentScore = 0;
+let opponentUsername = "Unknown";
 
-
-
-// Handle Peer Connection
+// Handle Peer Communication
 function setupPeerCommunication(socket) {
   peerConnection = socket;
 
-  socket.on('data', (data) => {
+  socket.write(JSON.stringify({ type: "username", username: localStorage.getItem("username") || "Guest" }));
+
+  socket.on("data", (data) => {
     try {
       const message = JSON.parse(data.toString());
-      console.log("Received:", message);
 
       if (message.type === "choice") {
         opponentChoice = message.choice;
         checkGameResult();
+      }
+      if (message.type === "username") {
+        opponentUsername = message.username;
+        document.getElementById("game-status").textContent = `Playing against ${opponentUsername}`;
+      }
+      if (message.type === "chat") {
+        displayChatMessage(message.username, message.message);
       }
     } catch (err) {
       console.error("Error parsing peer message:", err);
     }
   });
 
-  socket.on('close', () => {
+  socket.on("close", () => {
     console.log("Peer disconnected.");
     peerConnection = null;
     gameAccess = false;
-    gameStatus.textContent = "Disconnected from game.";
+    document.getElementById("game-status").textContent = "Disconnected from game.";
   });
 }
 
 // Generate Game
-document.getElementById('generate-game-link').addEventListener('click', () => {
-  const gameLink = b4a.toString(generatedTopic, 'hex');
-  document.getElementById('game-link-display').textContent = gameLink;
-  document.getElementById('join-game-link').value = gameLink;
+document.getElementById("generate-game-link").addEventListener("click", () => {
+  const gameLink = b4a.toString(generatedTopic, "hex");
+  document.getElementById("game-link-display").textContent = gameLink;
+  document.getElementById("join-game-link").value = gameLink;
 
   swarm.join(generatedTopic, { server: true });
-  swarm.on('connection', (socket, details) => {
-    console.log("New player joined:", details);
+  swarm.on("connection", (socket) => {
+    console.log("New player joined.");
     setupPeerCommunication(socket);
   });
 
@@ -150,21 +153,18 @@ document.getElementById('generate-game-link').addEventListener('click', () => {
   alert("Game created. Share the link with a friend!");
 });
 
-// Join Game 
-document.getElementById('join-game').addEventListener('click', async () => {
-  const joinLink = document.getElementById('join-game-link').value.trim();
-  
+// Join Game
+document.getElementById("join-game").addEventListener("click", () => {
+  const joinLink = document.getElementById("join-game-link").value.trim();
   if (!joinLink) {
     alert("Please enter a valid game link.");
     return;
   }
 
   gameAccess = true;
-  const joinTopic = b4a.from(joinLink, 'hex');
-
-  swarm.join(joinTopic, { client: true });
-  swarm.on('connection', (socket, details) => {
-    console.log("Connected to peer:", details);
+  swarm.join(b4a.from(joinLink, "hex"), { client: true });
+  swarm.on("connection", (socket) => {
+    console.log("Connected to peer.");
     setupPeerCommunication(socket);
   });
 
@@ -198,26 +198,45 @@ function checkGameResult(playerChoice) {
     opponentScore++;
   }
 
-  playerScoreEl.textContent = playerScore;
-  opponentScoreEl.textContent = opponentScore;
-  gameStatus.textContent = `You chose ${playerChoice}, opponent chose ${opponentChoice}. Result: ${result}`;
-  saveGameResult(result);
+  document.getElementById("player-score").textContent = playerScore;
+  document.getElementById("opponent-score").textContent = opponentScore;
+  document.getElementById("game-status").textContent = `You chose ${playerChoice}, opponent chose ${opponentChoice}. Result: ${result}`;
 }
 
-// Save Game Results to Hypercore
-function saveGameResult(result) {
-  const gameData = { timestamp: Date.now(), result };
-  feed.append(gameData, (err) => {
-    if (err) console.error("Error saving game result:", err);
-    else console.log("Game result saved:", gameData);
-  });
+// Chat 
+const chatForm = document.getElementById("start-lobby-chat");
+const chatInput = document.getElementById("chat-input");
+const sendChatBtn = document.getElementById("send-chat");
+const chatMessages = document.getElementById("chat-messages");
+
+chatForm.addEventListener("click", () => {
+  const chatBox = document.querySelector(".chat-box");
+  chatBox.style.display = chatBox.style.display === "none" ? "block" : "none";
+});
+
+function displayChatMessage(username, message) {
+  const chatEntry = document.createElement("p");
+  chatEntry.innerHTML = `<strong>${username}:</strong> ${message}`;
+  chatMessages.appendChild(chatEntry);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Reset Game
-function resetGame() {
-  playerScore = 0;
-  opponentScore = 0;
-  playerScoreEl.textContent = playerScore;
-  opponentScoreEl.textContent = opponentScore;
-  gameStatus.textContent = "Waiting for opponent...";
-}
+sendChatBtn.addEventListener("click", () => {
+  if (!peerConnection) {
+    alert("Not connected to any peers!");
+    return;
+  }
+
+  const message = chatInput.value.trim();
+  if (message) {
+    const chatData = {
+      type: "chat",
+      username: localStorage.getItem("username") || "Guest",
+      message: message,
+    };
+
+    peerConnection.write(JSON.stringify(chatData));
+    displayChatMessage("You", message);
+    chatInput.value = "";
+  }
+});

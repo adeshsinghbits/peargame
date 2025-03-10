@@ -255,8 +255,51 @@ button {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 90vh;
     width: 100%;
     background: #282c34;
     color: #ffffff;
+}
+
+.chat-box {
+    display: none;
+    width: 100%;
+    max-width: 400px;
+    background: #222;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+#chat-messages {
+    width: 90%;
+    margin: 5px auto;
+    height: 100px;
+    overflow-y: auto;
+    background: #333;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.chat-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#chat-input {
+    width: 70%;
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    display: inline-block;
+}
+
+#send-chat {
+    width: 25%;
+    padding: 8px;
+    border-radius: 5px;
+    background: #32b13f;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
 }
